@@ -1,4 +1,4 @@
-// 1. Core Data
+// 1. Core Data Initialization
 let quotes = JSON.parse(localStorage.getItem('quotes')) || [
     { text: "The only way to do great work is to love what you do.", category: "Motivation" },
     { text: "Innovation distinguishes between a leader and a follower.", category: "Leadership" }
@@ -6,28 +6,30 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
   
   const SERVER_URL = 'https://jsonplaceholder.typicode.com/posts';
   
-  // 2. Server Interaction Functions
+  // 2. Server Interaction and Syncing Logic
   
   /**
-   * MANDATORY: Fetches quotes from a mock server API.
+   * Fetches quotes from a mock server API.
    */
   async function fetchQuotesFromServer() {
     try {
       const response = await fetch(SERVER_URL);
-      const data = await response.json();
-      // Simulate mapping mock API data to our quote format
-      return data.slice(0, 5).map(post => ({
+      const serverPosts = await response.json();
+      
+      // Convert server data to our quote object format
+      return serverPosts.slice(0, 5).map(post => ({
         text: post.title,
         category: "Server"
       }));
     } catch (error) {
-      console.error("Error fetching from server:", error);
+      console.error("Fetch error:", error);
       return [];
     }
   }
   
   /**
-   * Synchronizes local quotes with the server and handles conflict resolution.
+   * Periodically checks for new quotes from the server and updates local storage.
+   * Implements conflict resolution where server data is merged with local data.
    */
   async function syncQuotes() {
     const statusEl = document.getElementById('syncStatus');
@@ -35,7 +37,7 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
   
     const serverQuotes = await fetchQuotesFromServer();
     
-    // Conflict Resolution: Check for quotes on server not present locally
+    // Conflict Resolution: Only add quotes that are unique to the server
     const newQuotes = serverQuotes.filter(sQuote => 
       !quotes.some(lQuote => lQuote.text === sQuote.text)
     );
@@ -44,28 +46,30 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
       quotes.push(...newQuotes);
       saveQuotes();
       populateCategories();
-      showNotification(`${newQuotes.length} quotes synced from server!`, "#28a745");
+      showNotification(`${newQuotes.length} new quotes synced from server!`, "#28a745");
     }
   
     statusEl.innerText = "Status: Quotes up to date";
   }
   
   /**
-   * Simulates pushing a new quote to the server.
+   * Simulates posting data to the server with appropriate headers.
    */
   async function postQuoteToServer(quote) {
     try {
       await fetch(SERVER_URL, {
         method: 'POST',
         body: JSON.stringify(quote),
-        headers: { 'Content-type': 'application/json; charset=UTF-8' }
+        headers: {
+          'Content-Type': 'application/json' // Explicitly using 'Content-Type'
+        }
       });
     } catch (error) {
-      console.error("Posting error:", error);
+      console.error("Error posting to server:", error);
     }
   }
   
-  // 3. UI & DOM Logic
+  // 3. UI and DOM Manipulation
   
   function showNotification(msg, color) {
     const note = document.getElementById('notification');
@@ -79,6 +83,9 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
     localStorage.setItem('quotes', JSON.stringify(quotes));
   }
   
+  /**
+   * Extracts unique categories and populates the dropdown filter.
+   */
   function populateCategories() {
     const filter = document.getElementById('categoryFilter');
     const uniqueCategories = [...new Set(quotes.map(q => q.category))];
@@ -106,7 +113,6 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
   
     const quote = filtered[Math.floor(Math.random() * filtered.length)];
     display.innerHTML = `<p>"${quote.text}"</p><small>Category: ${quote.category}</small>`;
-    sessionStorage.setItem('lastViewedQuote', JSON.stringify(quote));
   }
   
   function filterQuotes() {
@@ -114,6 +120,9 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
     showRandomQuote();
   }
   
+  /**
+   * Handles adding a new quote and syncing it to the server.
+   */
   async function addQuote() {
     const textInput = document.getElementById('newQuoteText');
     const catInput = document.getElementById('newQuoteCategory');
@@ -124,12 +133,12 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
       saveQuotes();
       populateCategories();
       
-      // Post new quote to server
+      // Simulate server update
       await postQuoteToServer(newQuote);
       
       textInput.value = '';
       catInput.value = '';
-      showNotification("Quote added and pushed to server!", "#007bff");
+      showNotification("Quote added successfully!", "#007bff");
     }
   }
   
@@ -137,13 +146,13 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
     const container = document.getElementById('formContainer');
     container.innerHTML = `
       <h3>Add a New Quote</h3>
-      <input id="newQuoteText" type="text" placeholder="Enter quote text" />
-      <input id="newQuoteCategory" type="text" placeholder="Enter category" />
+      <input id="newQuoteText" type="text" placeholder="Enter quote text" style="width: 100%; margin-bottom: 10px;" />
+      <input id="newQuoteCategory" type="text" placeholder="Enter category" style="width: 100%; margin-bottom: 10px;" />
       <button onclick="addQuote()">Add Quote</button>
     `;
   }
   
-  // 4. Import/Export Logic
+  // 4. File I/O Logic
   
   function exportToJsonFile() {
     const blob = new Blob([JSON.stringify(quotes)], { type: "application/json" });
@@ -157,24 +166,28 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
   function importFromJsonFile(event) {
     const reader = new FileReader();
     reader.onload = function(e) {
-      const imported = JSON.parse(e.target.result);
-      quotes.push(...imported);
-      saveQuotes();
-      populateCategories();
-      showNotification("Import Successful!", "#28a745");
+      try {
+        const imported = JSON.parse(e.target.result);
+        quotes.push(...imported);
+        saveQuotes();
+        populateCategories();
+        showNotification("Quotes Imported!", "#28a745");
+      } catch (err) {
+        showNotification("Error: Invalid file", "#dc3545");
+      }
     };
     reader.readAsText(event.target.files[0]);
   }
   
-  // 5. App Initialization
+  // 5. Initial Execution
   window.onload = () => {
     populateCategories();
     createAddQuoteForm();
     showRandomQuote();
     
-    // Set up periodic sync
-    setInterval(syncQuotes, 60000); // Every 60 seconds
-    syncQuotes(); // Immediate sync on load
+    // Setup periodic synchronization
+    setInterval(syncQuotes, 60000); // 1 minute
+    syncQuotes(); // Initial fetch
   };
   
   document.getElementById('newQuote').addEventListener('click', showRandomQuote);
