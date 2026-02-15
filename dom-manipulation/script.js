@@ -1,50 +1,57 @@
-// 1. DATA INITIALIZATION
+// 1. Core Data
 let quotes = JSON.parse(localStorage.getItem('quotes')) || [
-    { text: "The only way to do great work is to love what you do.", category: "Motivation" }
+    { text: "The only way to do great work is to love what you do.", category: "Motivation" },
+    { text: "Innovation distinguishes between a leader and a follower.", category: "Leadership" }
   ];
   
   const SERVER_URL = 'https://jsonplaceholder.typicode.com/posts';
   
-  // 2. SERVER SYNC FUNCTIONS
-  /**
-   * Periodically fetches quotes from the server and merges them with local data.
-   * Conflict Resolution Strategy: Server data is merged into local storage.
-   */
-  async function syncQuotes() {
-    const statusEl = document.getElementById('syncStatus');
-    statusEl.innerText = "Sync Status: Checking server...";
+  // 2. Server Interaction Functions
   
+  /**
+   * MANDATORY: Fetches quotes from a mock server API.
+   */
+  async function fetchQuotesFromServer() {
     try {
       const response = await fetch(SERVER_URL);
-      const serverData = await response.json();
-      
-      // Simulate mapping server 'posts' to our 'quote' format
-      const serverQuotes = serverData.slice(0, 5).map(post => ({
+      const data = await response.json();
+      // Simulate mapping mock API data to our quote format
+      return data.slice(0, 5).map(post => ({
         text: post.title,
         category: "Server"
       }));
-  
-      // Conflict Resolution: Find quotes that exist on server but NOT in local list
-      const newQuotes = serverQuotes.filter(sQuote => 
-        !quotes.some(lQuote => lQuote.text === sQuote.text)
-      );
-  
-      if (newQuotes.length > 0) {
-        quotes.push(...newQuotes);
-        saveQuotes();
-        populateCategories();
-        showNotification(`${newQuotes.length} new quotes synced from server!`, "#28a745");
-      }
-      
-      statusEl.innerText = "Sync Status: Quotes up to date";
     } catch (error) {
-      statusEl.innerText = "Sync Status: Connection Error";
-      console.error("Sync failed:", error);
+      console.error("Error fetching from server:", error);
+      return [];
     }
   }
   
   /**
-   * Posts a new quote to the server (Simulation)
+   * Synchronizes local quotes with the server and handles conflict resolution.
+   */
+  async function syncQuotes() {
+    const statusEl = document.getElementById('syncStatus');
+    statusEl.innerText = "Status: Syncing...";
+  
+    const serverQuotes = await fetchQuotesFromServer();
+    
+    // Conflict Resolution: Check for quotes on server not present locally
+    const newQuotes = serverQuotes.filter(sQuote => 
+      !quotes.some(lQuote => lQuote.text === sQuote.text)
+    );
+  
+    if (newQuotes.length > 0) {
+      quotes.push(...newQuotes);
+      saveQuotes();
+      populateCategories();
+      showNotification(`${newQuotes.length} quotes synced from server!`, "#28a745");
+    }
+  
+    statusEl.innerText = "Status: Quotes up to date";
+  }
+  
+  /**
+   * Simulates pushing a new quote to the server.
    */
   async function postQuoteToServer(quote) {
     try {
@@ -54,17 +61,18 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
         headers: { 'Content-type': 'application/json; charset=UTF-8' }
       });
     } catch (error) {
-      console.error("Server update failed:", error);
+      console.error("Posting error:", error);
     }
   }
   
-  // 3. UI & DOM MANIPULATION
+  // 3. UI & DOM Logic
+  
   function showNotification(msg, color) {
     const note = document.getElementById('notification');
     note.innerText = msg;
     note.style.backgroundColor = color;
     note.style.display = 'block';
-    setTimeout(() => note.style.display = 'none', 4000);
+    setTimeout(() => note.style.display = 'none', 3000);
   }
   
   function saveQuotes() {
@@ -73,17 +81,17 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
   
   function populateCategories() {
     const filter = document.getElementById('categoryFilter');
-    const selected = localStorage.getItem('lastCategoryFilter') || 'all';
-    const categories = [...new Set(quotes.map(q => q.category))];
-    
+    const uniqueCategories = [...new Set(quotes.map(q => q.category))];
+    const lastFilter = localStorage.getItem('lastCategoryFilter') || 'all';
+  
     filter.innerHTML = '<option value="all">All Categories</option>';
-    categories.forEach(cat => {
+    uniqueCategories.forEach(cat => {
       const opt = document.createElement('option');
       opt.value = cat;
       opt.textContent = cat;
       filter.appendChild(opt);
     });
-    filter.value = selected;
+    filter.value = lastFilter;
   }
   
   function showRandomQuote() {
@@ -92,12 +100,13 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
     const filtered = filterVal === 'all' ? quotes : quotes.filter(q => q.category === filterVal);
   
     if (filtered.length === 0) {
-      display.innerHTML = "<p>No quotes found.</p>";
+      display.innerHTML = "<p>No quotes in this category.</p>";
       return;
     }
   
     const quote = filtered[Math.floor(Math.random() * filtered.length)];
     display.innerHTML = `<p>"${quote.text}"</p><small>Category: ${quote.category}</small>`;
+    sessionStorage.setItem('lastViewedQuote', JSON.stringify(quote));
   }
   
   function filterQuotes() {
@@ -105,46 +114,43 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
     showRandomQuote();
   }
   
-  // 4. ADDING DATA
   async function addQuote() {
     const textInput = document.getElementById('newQuoteText');
     const catInput = document.getElementById('newQuoteCategory');
-    const text = textInput.value.trim();
-    const category = catInput.value.trim();
-  
-    if (text && category) {
-      const newQuote = { text, category };
+    
+    if (textInput.value && catInput.value) {
+      const newQuote = { text: textInput.value, category: catInput.value };
       quotes.push(newQuote);
       saveQuotes();
-      
-      // UI Update
       populateCategories();
+      
+      // Post new quote to server
+      await postQuoteToServer(newQuote);
+      
       textInput.value = '';
       catInput.value = '';
-      
-      // Immediate Sync Post
-      await postQuoteToServer(newQuote);
-      showNotification("Quote saved locally and pushed to server!", "#1877f2");
+      showNotification("Quote added and pushed to server!", "#007bff");
     }
   }
   
   function createAddQuoteForm() {
     const container = document.getElementById('formContainer');
     container.innerHTML = `
-      <h3>Contribute a Quote</h3>
-      <input id="newQuoteText" type="text" placeholder="Quote Text" style="width: 100%; margin-bottom: 10px;">
-      <input id="newQuoteCategory" type="text" placeholder="Category" style="width: 100%; margin-bottom: 10px;">
-      <button onclick="addQuote()">Submit Quote</button>
+      <h3>Add a New Quote</h3>
+      <input id="newQuoteText" type="text" placeholder="Enter quote text" />
+      <input id="newQuoteCategory" type="text" placeholder="Enter category" />
+      <button onclick="addQuote()">Add Quote</button>
     `;
   }
   
-  // 5. IMPORT/EXPORT
+  // 4. Import/Export Logic
+  
   function exportToJsonFile() {
     const blob = new Blob([JSON.stringify(quotes)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'quotes_export.json';
+    a.download = 'quotes.json';
     a.click();
   }
   
@@ -155,20 +161,20 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
       quotes.push(...imported);
       saveQuotes();
       populateCategories();
-      showNotification("Quotes Imported!", "#28a745");
+      showNotification("Import Successful!", "#28a745");
     };
     reader.readAsText(event.target.files[0]);
   }
   
-  // INITIALIZE
+  // 5. App Initialization
   window.onload = () => {
     populateCategories();
     createAddQuoteForm();
     showRandomQuote();
-    // Start periodic sync (every 60 seconds)
-    setInterval(syncQuotes, 60000);
-    // Initial sync
-    syncQuotes();
+    
+    // Set up periodic sync
+    setInterval(syncQuotes, 60000); // Every 60 seconds
+    syncQuotes(); // Immediate sync on load
   };
   
   document.getElementById('newQuote').addEventListener('click', showRandomQuote);
