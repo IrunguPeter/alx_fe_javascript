@@ -7,14 +7,13 @@
   <style>
     body { font-family: 'Segoe UI', sans-serif; padding: 40px; max-width: 800px; margin: auto; background-color: #f4f4f9; }
     .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    #syncStatus { font-size: 0.8rem; color: #666; margin-bottom: 10px; text-align: right; font-weight: bold; }
-    #quoteDisplay { min-height: 100px; margin: 20px 0; padding: 20px; border-left: 8px solid #007bff; background: #e9ecef; border-radius: 4px; }
-    .controls, .import-export { margin: 20px 0; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    button { padding: 10px 15px; cursor: pointer; border: none; border-radius: 4px; background: #007bff; color: white; font-weight: bold; }
+    #syncStatus { font-size: 0.8rem; color: #666; margin-bottom: 10px; text-align: right; }
+    #quoteDisplay { min-height: 100px; margin: 20px 0; padding: 20px; border-left: 8px solid #007bff; background: #e9ecef; }
+    .controls, .import-export { margin: 20px 0; display: flex; gap: 10px; flex-wrap: wrap; }
+    button { padding: 10px 15px; cursor: pointer; border: none; border-radius: 4px; background: #007bff; color: white; }
     button:hover { background: #0056b3; }
     input, select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
     .form-container { margin-top: 30px; padding-top: 20px; border-top: 2px solid #eee; }
-    #notification { position: fixed; bottom: 20px; right: 20px; padding: 15px; border-radius: 5px; color: white; display: none; z-index: 1000; }
   </style>
 </head>
 <body>
@@ -32,19 +31,16 @@
     </div>
 
     <div id="quoteDisplay">
-      <p>Loading inspiration...</p>
+      <p>Click "Show New Quote" to start!</p>
     </div>
 
     <div class="import-export">
       <button onclick="exportToJsonFile()">Export Quotes</button>
-      <label for="importFile">Import: </label>
       <input type="file" id="importFile" accept=".json" onchange="importFromJsonFile(event)" />
     </div>
 
     <div id="formContainer" class="form-container"></div>
   </div>
-
-  <div id="notification"></div>
 
   <script src="script.js"></script>
 </body>

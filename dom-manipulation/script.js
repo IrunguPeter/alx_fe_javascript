@@ -9,7 +9,7 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
   // 2. Server Interaction and Syncing Logic
   
   /**
-   * Fetches quotes from a mock server API.
+   * REQUIRED: Fetches quotes from a mock server API.
    */
   async function fetchQuotesFromServer() {
     try {
@@ -29,7 +29,7 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
   
   /**
    * Periodically checks for new quotes from the server and updates local storage.
-   * Implements conflict resolution where server data is merged with local data.
+   * REQUIRED: alert("Quotes synced with server!")
    */
   async function syncQuotes() {
     const statusEl = document.getElementById('syncStatus');
@@ -46,7 +46,9 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
       quotes.push(...newQuotes);
       saveQuotes();
       populateCategories();
-      showNotification(`${newQuotes.length} new quotes synced from server!`, "#28a745");
+      
+      // REQUIRED ALERT MESSAGE
+      alert("Quotes synced with server!");
     }
   
     statusEl.innerText = "Status: Quotes up to date";
@@ -61,7 +63,7 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
         method: 'POST',
         body: JSON.stringify(quote),
         headers: {
-          'Content-Type': 'application/json' // Explicitly using 'Content-Type'
+          'Content-Type': 'application/json'
         }
       });
     } catch (error) {
@@ -70,14 +72,6 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
   }
   
   // 3. UI and DOM Manipulation
-  
-  function showNotification(msg, color) {
-    const note = document.getElementById('notification');
-    note.innerText = msg;
-    note.style.backgroundColor = color;
-    note.style.display = 'block';
-    setTimeout(() => note.style.display = 'none', 3000);
-  }
   
   function saveQuotes() {
     localStorage.setItem('quotes', JSON.stringify(quotes));
@@ -133,12 +127,11 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
       saveQuotes();
       populateCategories();
       
-      // Simulate server update
       await postQuoteToServer(newQuote);
       
       textInput.value = '';
       catInput.value = '';
-      showNotification("Quote added successfully!", "#007bff");
+      alert("Quote added locally and synced!");
     }
   }
   
@@ -171,9 +164,9 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
         quotes.push(...imported);
         saveQuotes();
         populateCategories();
-        showNotification("Quotes Imported!", "#28a745");
+        alert("Quotes imported successfully!");
       } catch (err) {
-        showNotification("Error: Invalid file", "#dc3545");
+        alert("Error: Invalid file format.");
       }
     };
     reader.readAsText(event.target.files[0]);
@@ -186,8 +179,8 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
     showRandomQuote();
     
     // Setup periodic synchronization
-    setInterval(syncQuotes, 60000); // 1 minute
-    syncQuotes(); // Initial fetch
+    setInterval(syncQuotes, 60000); 
+    syncQuotes();
   };
   
   document.getElementById('newQuote').addEventListener('click', showRandomQuote);
