@@ -3,41 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dynamic Quote Generator - Pro</title>
+  <title>Dynamic Quote Generator</title>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; padding: 40px; max-width: 800px; margin: auto; background-color: #f0f2f5; color: #1c1e21; }
-    .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
-    h1 { color: #1877f2; margin-bottom: 10px; }
-    #syncStatus { font-size: 0.85rem; color: #65676b; margin-bottom: 15px; font-weight: bold; }
-    #quoteDisplay { min-height: 100px; margin: 20px 0; padding: 25px; border-left: 6px solid #1877f2; background: #f7f8fa; border-radius: 4px; font-size: 1.25rem; line-height: 1.5; }
-    .controls, .actions { margin: 20px 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 6px; background: #1877f2; color: white; font-weight: 600; }
-    button:hover { background: #166fe5; }
-    select, input { padding: 10px; border: 1px solid #dddfe2; border-radius: 6px; }
-    .form-container { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ced4da; }
-    #notification { position: fixed; bottom: 20px; right: 20px; padding: 15px 25px; border-radius: 8px; color: white; display: none; transition: 0.3s; z-index: 1000; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; max-width: 800px; margin: auto; background-color: #f4f4f9; }
+    .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    #syncStatus { font-size: 0.8rem; color: #666; margin-bottom: 10px; text-align: right; font-weight: bold; }
+    #quoteDisplay { min-height: 100px; margin: 20px 0; padding: 20px; border-left: 8px solid #007bff; background: #e9ecef; font-size: 1.2rem; }
+    .controls, .import-export { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    button { padding: 10px 15px; cursor: pointer; border: none; border-radius: 4px; background: #007bff; color: white; }
+    button:hover { background: #0056b3; }
+    input, select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+    .form-container { margin-top: 30px; padding-top: 20px; border-top: 2px solid #eee; }
+    #notification { position: fixed; bottom: 20px; right: 20px; padding: 15px; border-radius: 5px; color: white; display: none; z-index: 1000; }
   </style>
 </head>
 <body>
 
-  <div class="card">
-    <h1>Quote Generator</h1>
-    <div id="syncStatus">Sync Status: Initializing...</div>
+  <div class="container">
+    <h1>Dynamic Quote Generator</h1>
+    <div id="syncStatus">Status: Initializing...</div>
     
     <div class="controls">
       <select id="categoryFilter" onchange="filterQuotes()">
         <option value="all">All Categories</option>
       </select>
-      <button id="newQuote">New Quote</button>
-      <button onclick="syncQuotes()">Force Sync</button>
+      <button id="newQuote">Show New Quote</button>
+      <button onclick="syncQuotes()">Sync with Server</button>
     </div>
 
     <div id="quoteDisplay">
-      <p>Synchronizing with server...</p>
+      <p>Loading inspiration...</p>
     </div>
 
-    <div class="actions">
-      <button onclick="exportToJsonFile()">Export JSON</button>
+    <div class="import-export">
+      <button onclick="exportToJsonFile()">Export Quotes</button>
+      <label for="importFile">Import: </label>
       <input type="file" id="importFile" accept=".json" onchange="importFromJsonFile(event)" />
     </div>
 
